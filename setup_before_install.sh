@@ -9,9 +9,12 @@ echo '-- disable tuned'
 systemctl disable tuned
 systemctl stop tuned
 
-chmod 755 /etc/rc.d/rc.local
+echo '-- set vm.swappiness = 1'
+sed -i '/vm.swappiness/d' /etc/sysctl.conf
 echo  "vm.swappiness = 1" >> /etc/sysctl.conf
 sysctl vm.swappiness=1
+chmod 755 /etc/rc.d/rc.local
+
 #timedatectl set-timezone UTC
 echo "-- Set Timezone Asia/Seoul"
 timedatectl set-timezone Asia/Seoul
@@ -37,6 +40,7 @@ if [ "`ulimit -u`" -lt "65536" ]; then
   echo "* soft nproc 65536" >> /etc/security/limits.conf
 fi
 
+NTP_SERVER_ADDRESS=141.223.182.106
 if [ "${NTP_SERVER_ADDRESS}" != "" ]; then
   echo "-- Disable chronyd"
   systemctl disable chronyd
@@ -44,5 +48,6 @@ if [ "${NTP_SERVER_ADDRESS}" != "" ]; then
   echo "-- Install NTP"
   yum install -y ntp
   echo "-- set NTP server : ${NTP_SERVER_ADDRESS}"
-  sed -ri '/^server / { x; /./ d; s/^.*$/server ${NTP_SERVER_ADDRESS} iburst/ }' /etc/ntp.conf
+  sed -ri "/^server / { x; /./ d; s/^.*$/server ${NTP_SERVER_ADDRESS} iburst/ }" /etc/ntp.conf
+  systemctl start ntpd
 fi
